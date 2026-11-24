@@ -49,21 +49,42 @@
 
   <!-- =========================================================
        SEASONAL LOOK
-       The site picks its colors automatically from today's date:
-         Spring = Mar–May   Summer = Jun–Aug
-         Fall   = Sep–Nov   Winter = Dec–Feb
-       To lock in one look, put "spring", "summer", "fall" or
-       "winter" between the quotes below. Leave it "" for automatic.
-       To turn the falling leaves/snow off, change true to false.
+       The site picks its look automatically from today's date:
+         Spring       = Mar–May
+         Summer       = Jun–Aug
+         Fall         = Sep–Oct
+         Thanksgiving = Nov 1 through Thanksgiving Day (turkeys!)
+         Christmas    = day after Thanksgiving through Dec 26
+         Winter       = Dec 27–Feb
+       To lock in one look, put "spring", "summer", "fall",
+       "thanksgiving", "christmas" or "winter" between the quotes
+       below. Leave it "" for automatic.
+       To turn off the moving effects (leaves, turkeys, snow,
+       lights), change true to false.
        ========================================================= -->
   <script>
     const SEASON_OVERRIDE = "";
     const SEASON_EFFECTS = true;
 
     (function () {
-      var m = Number(new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", month: "numeric" }).format(new Date()));
-      var auto = m >= 3 && m <= 5 ? "spring" : m >= 6 && m <= 8 ? "summer" : m >= 9 && m <= 11 ? "fall" : "winter";
-      var s = ["spring", "summer", "fall", "winter"].indexOf(SEASON_OVERRIDE) > -1 ? SEASON_OVERRIDE : auto;
+      var parts = new Intl.DateTimeFormat("en-US", { timeZone: "America/Chicago", year: "numeric", month: "numeric", day: "numeric" })
+        .formatToParts(new Date()).reduce(function (o, p) { o[p.type] = Number(p.value); return o; }, {});
+      var y = parts.year, m = parts.month, d = parts.day;
+
+      // Thanksgiving = 4th Thursday of November
+      var nov1 = new Date(Date.UTC(y, 10, 1)).getUTCDay();
+      var thanksgiving = 1 + ((4 - nov1 + 7) % 7) + 21;
+
+      var auto;
+      if (m === 11 && d <= thanksgiving) auto = "thanksgiving";
+      else if ((m === 11 && d > thanksgiving) || (m === 12 && d <= 26)) auto = "christmas";
+      else if (m >= 3 && m <= 5) auto = "spring";
+      else if (m >= 6 && m <= 8) auto = "summer";
+      else if (m >= 9 && m <= 11) auto = "fall";
+      else auto = "winter";
+
+      var allowed = ["spring", "summer", "fall", "thanksgiving", "christmas", "winter"];
+      var s = allowed.indexOf(SEASON_OVERRIDE) > -1 ? SEASON_OVERRIDE : auto;
       document.documentElement.setAttribute("data-season", s);
       if (!SEASON_EFFECTS) document.documentElement.setAttribute("data-effects", "off");
       if ("IntersectionObserver" in window) document.documentElement.classList.add("js-anim");
@@ -75,6 +96,14 @@
     html[data-season="fall"] {
       --bg:#fbf4ea; --accent:#b8541f; --accent-deep:#5e2a14; --accent-soft:#f8e6d3;
       --hero-top:rgba(255, 214, 160, .30); --hero-bottom:rgba(120, 45, 15, .88);
+    }
+    html[data-season="thanksgiving"] {
+      --bg:#fbf3e8; --accent:#a8461b; --accent-deep:#4f2412; --accent-soft:#f6e2cc;
+      --hero-top:rgba(255, 200, 130, .30); --hero-bottom:rgba(110, 40, 12, .90);
+    }
+    html[data-season="christmas"] {
+      --bg:#fdf8f4; --accent:#b3202a; --accent-deep:#1d5e3a; --accent-soft:#fbe6e6;
+      --hero-top:rgba(255, 235, 235, .25); --hero-bottom:rgba(120, 16, 26, .90);
     }
     html[data-season="winter"] {
       --bg:#f3f6fa; --accent:#2f6496; --accent-deep:#16304d; --accent-soft:#e1ebf5;
@@ -212,6 +241,70 @@
     }
     .open-status.is-open::before { animation: live-dot 1.6s ease-in-out infinite; }
 
+    /* ---------- Thanksgiving: turkeys strutting across the cover photo ---------- */
+    .turkeys, .xmas-lights { display: none; }
+    html[data-season="thanksgiving"] .turkeys { display: block; }
+    html[data-season="christmas"] .xmas-lights { display: flex; }
+    .turkeys { position: absolute; left: 0; right: 0; bottom: 6px; height: 70px; pointer-events: none; overflow: hidden; }
+    .turkey {
+      position: absolute; bottom: 0; left: 100%;
+      font-size: 46px; line-height: 1;
+      filter: drop-shadow(0 4px 4px rgba(0,0,0,.3));
+      animation: turkey-walk 18s linear infinite;
+    }
+    .turkey > span { display: inline-block; animation: turkey-hop .45s ease-in-out infinite alternate; transform-origin: bottom center; }
+    .turkey.t2 { font-size: 34px; animation-duration: 24s; animation-delay: -9s; bottom: 4px; }
+    .turkey.t2 > span { animation-duration: .38s; }
+    @keyframes turkey-walk {
+      0%   { left: 100%; }
+      100% { left: -80px; }
+    }
+    @keyframes turkey-hop {
+      from { transform: translateY(0) rotate(-4deg); }
+      to   { transform: translateY(-7px) rotate(4deg); }
+    }
+    /* little "gobble!" bubble that pops up now and then */
+    .turkey .gobble {
+      position: absolute; bottom: 100%; left: -6px; white-space: nowrap;
+      font: 700 12px/1 Inter, system-ui, sans-serif; color: #4f2412;
+      background: #fff; padding: 5px 8px; border-radius: 10px;
+      opacity: 0; animation: gobble 6s ease-in-out infinite;
+    }
+    @keyframes gobble {
+      0%, 60%, 100% { opacity: 0; transform: translateY(4px); }
+      66%, 82%      { opacity: 1; transform: none; }
+    }
+
+    /* ---------- Christmas: twinkling string lights ---------- */
+    .xmas-lights {
+      position: absolute; top: 0; left: 0; right: 0; z-index: 1;
+      justify-content: space-around; pointer-events: none;
+      padding: 0 10px; height: 46px;
+      border-top: 3px solid #1d3b26;
+    }
+    .xmas-lights i {
+      position: relative; display: block; width: 12px; height: 20px; margin-top: 6px;
+      border-radius: 50%; background: var(--c);
+      box-shadow: 0 2px 14px 3px var(--c);
+      animation: twinkle 1.6s ease-in-out infinite alternate;
+    }
+    .xmas-lights i:nth-child(even) { margin-top: 14px; }
+    .xmas-lights i::before {
+      content: ""; position: absolute; top: -6px; left: 2px; width: 8px; height: 6px;
+      background: #2d3a2f; border-radius: 2px;
+    }
+    .xmas-lights i:nth-child(4n+1) { --c:#ff3b3b; animation-delay: 0s; }
+    .xmas-lights i:nth-child(4n+2) { --c:#3bdc6a; animation-delay: .4s; }
+    .xmas-lights i:nth-child(4n+3) { --c:#ffd23b; animation-delay: .8s; }
+    .xmas-lights i:nth-child(4n+4) { --c:#4fb3ff; animation-delay: 1.2s; }
+    @keyframes twinkle {
+      from { opacity: 1; filter: brightness(1.15); }
+      to   { opacity: .35; filter: brightness(.7); box-shadow: 0 2px 4px 0 var(--c); }
+    }
+    @media (max-width: 600px) { .xmas-lights i:nth-child(n+13) { display: none; } }
+
+    html[data-effects="off"] .turkeys, html[data-effects="off"] .xmas-lights { display: none; }
+
     /* Respect visitors who turn off motion on their phone/computer */
     @media (prefers-reduced-motion: reduce) {
       *, *::before, *::after { animation: none !important; transition: none !important; }
@@ -295,6 +388,13 @@
   <section class="hero">
     <div class="overlay"></div>
     <div class="season-fx" id="season-fx" aria-hidden="true"></div>
+    <div class="xmas-lights" aria-hidden="true">
+      <i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+    <div class="turkeys" aria-hidden="true">
+      <div class="turkey t1"><span>🦃</span><b class="gobble">Gobble gobble!</b></div>
+      <div class="turkey t2"><span>🦃</span></div>
+    </div>
     <div class="wrap hero-inner">
       <img class="hero-mark" src="logo.png" alt="Zen Nail Logo">
       <h1>Zen Nail In Lexington, TN</h1>
@@ -483,7 +583,9 @@
   const SEASON_GREETINGS = {
     spring: "🌸 Fresh spring colors are here",
     summer: "☀️ Sandal season — book your pedicure",
-    fall:   "🍂 Cozy fall shades now in",
+    fall:         "🍂 Cozy fall shades now in",
+    thanksgiving: "🦃 Happy Thanksgiving from Zen Nail!",
+    christmas:    "🎄 Merry Christmas! Gift cards make the perfect present",
     winter: "❄️ Holiday sparkle & gift cards available"
   };
 
@@ -517,7 +619,7 @@
     if (tag) tag.textContent = SEASON_GREETINGS[season] || "";
 
     const fx = document.getElementById("season-fx");
-    const icons = { fall: ["🍂", "🍁", "🍂"], winter: ["❄", "❅", "❆"], spring: ["🌸", "🌸", "💮"], summer: ["✦", "✧", "✦"] };
+    const icons = { fall: ["🍂", "🍁", "🍂"], thanksgiving: ["🍂", "🍁", "🍂"], christmas: ["❄", "❅", "❆"], winter: ["❄", "❅", "❆"], spring: ["🌸", "🌸", "💮"], summer: ["✦", "✧", "✦"] };
     if (fx && icons[season]) {
       const pick = icons[season];
       let html = "";
@@ -526,7 +628,7 @@
         const size = 14 + Math.random() * 14;
         const dur = 9 + Math.random() * 8;
         const delay = -Math.random() * dur;
-        const color = season === "winter" || season === "summer" ? "color:#fff;" : "";
+        const color = season === "winter" || season === "christmas" || season === "summer" ? "color:#fff;" : "";
         html += '<span style="left:' + left + '%;font-size:' + size + 'px;animation-duration:' + dur + 's;animation-delay:' + delay + 's;' + color + '">' + pick[i % pick.length] + "</span>";
       }
       fx.innerHTML = html;
