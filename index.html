@@ -463,10 +463,17 @@
      and change the dates and message. Keep the comma at the end.
      ================================================================= */
   const ANNOUNCEMENTS = [
-     { from: "2026-11-26", to: "2026-11-26", type: "closed", message: "Closed today for Thanksgiving. Happy Thanksgiving!" },
+    // Thanksgiving: heads-up notice from now until Wednesday, then closed on the day
+    { from: "2026-11-23", to: "2026-11-25", type: "info",   message: "We will be closed Thursday, November 26 for Thanksgiving." },
+    { from: "2026-11-26", to: "2026-11-26", type: "closed", message: "Closed today for Thanksgiving. Happy Thanksgiving!" },
+
+    // Christmas: heads-up notice the week before, then closed on the day
+    { from: "2026-12-19", to: "2026-12-24", type: "info",   message: "We will be closed Friday, December 25 for Christmas." },
+    { from: "2026-12-25", to: "2026-12-25", type: "closed", message: "Closed today for Christmas. Merry Christmas!" },
+
+    // ----- More examples (remove the // at the front to turn one on) -----
     // { from: "2026-12-24", to: "2026-12-24", type: "early",  closeAt: "15:00", message: "Closing early today at 3:00 PM for Christmas Eve." },
-     { from: "2026-12-25", to: "2026-12-25", type: "closed", message: "Closed for Christmas Day. Merry Christmas!" },
-     { from: "2026-12-01", to: "2026-12-31", type: "info",   message: "Gift cards available — the perfect holiday gift!" },
+    // { from: "2026-12-01", to: "2026-12-31", type: "info",   message: "Gift cards available — the perfect holiday gift!" },
   ];
 
   /* =================================================================
